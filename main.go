@@ -7,6 +7,7 @@ import (
 )
 
 type apiConfig struct {
+	// We use atomic lib here because it makes it easy to track the variable properly across go routines and shit! 
 	fileserverHits atomic.Int32
 }
 
@@ -15,6 +16,7 @@ func main() {
 	const port = "8080"
 
 	apiCfg := apiConfig{
+		// initialize it like this because it is effectively a struct
 		fileserverHits: atomic.Int32{},
 	}
 
