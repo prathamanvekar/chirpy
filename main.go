@@ -7,7 +7,7 @@ import (
 )
 
 type apiConfig struct {
-	// We use atomic lib here because it makes it easy to track the variable properly across go routines and shit! 
+	// We use atomic lib here because it makes it easy to track the variable properly across go routines and shit!
 	fileserverHits atomic.Int32
 }
 
@@ -24,9 +24,9 @@ func main() {
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
 	mux.Handle("/app/", fsHandler)
 
-	mux.HandleFunc("GET /healthz", handlerReadiness)
-	mux.HandleFunc("POST /reset", apiCfg.handlerReset)
-	mux.HandleFunc("GET /metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
