@@ -1,23 +1,43 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/prathamanvekar/learn-http-servers/internal/database"
 )
 
 type apiConfig struct {
 	// We use atomic lib here because it makes it easy to track the variable properly across go routines and shit!
 	fileserverHits atomic.Int32
+	db             *database.Queries
 }
 
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
 
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL must be set")
+	}
+
+	dbConn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error opening database: %s", err)
+	}
+	dbQueries := database.New(dbConn)
+
 	apiCfg := apiConfig{
 		// initialize it like this because it is effectively a struct
 		fileserverHits: atomic.Int32{},
+		db:             dbQueries,
 	}
 
 	mux := http.NewServeMux()
@@ -35,6 +55,6 @@ func main() {
 		Handler: mux,
 	}
 
-	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(srv.ListenAndServe())
 }
