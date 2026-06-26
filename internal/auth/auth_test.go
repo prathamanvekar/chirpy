@@ -2,6 +2,9 @@ package auth
 
 import (
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestCheckPasswordHash(t *testing.T) {
@@ -66,4 +69,100 @@ func TestCheckPasswordHash(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestJWTFlow(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "prathamaaaaaaaaaaaa"
+	expiresIn := time.Minute
+
+	token, err := MakeJWT(userID, tokenSecret, expiresIn)
+	if err != nil {
+		t.Fatalf("MakeJWT failed unexpectedly: %v", err)
+	}
+
+	parsedID, err := ValidateJWT(token, tokenSecret)
+	if err != nil {
+		t.Fatalf("ValidateJWT failed to parse a valid token: %v", err)
+	}
+
+	if parsedID != userID {
+		t.Errorf("ValidateJWT returned UUID %s; want %s", parsedID, userID)
+	}
+}
+
+// Testing an Expired Token
+func TestExpiredToken(t *testing.T) {
+	userID := uuid.New()
+	tokenSecret := "prathamaaaaaaaaaaaa"
+
+	token, _ := MakeJWT(userID, tokenSecret, -time.Hour)
+
+	_, err := ValidateJWT(token, tokenSecret)
+	if err == nil {
+		t.Errorf("Expected an error for an expired token, but got nil")
+	}
+}
+
+// Testing the Wrong Secret Key
+func TestWrongSecretKey(t *testing.T) {
+	userID := uuid.New()
+
+	token, _ := MakeJWT(userID, "aaaa", time.Minute)
+
+	_, err := ValidateJWT(token, "bbbb")
+
+	if err == nil {
+		t.Errorf("Expected signature verification to fail with wrong secret, but got nil")
+	}
+}
+
+func TestValidateJWT(t *testing.T) {
+	userID := uuid.New()
+	validToken, err := MakeJWT(userID, "secret", time.Hour)
+	if err != nil {
+		t.Fatalf("MakeJWT failed unexpectedly: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		tokenString string
+		tokenSecret string
+		wantUserID  uuid.UUID
+		wantErr     bool
+	}{
+		{
+			name:        "Valid Token",
+			tokenString: validToken,
+			tokenSecret: "secret",
+			wantUserID:  userID,
+			wantErr:     false,
+		},
+		{
+			name:        "Invalid Token",
+			tokenString: "invalid.token.string",
+			tokenSecret: "secret",
+			wantUserID:  uuid.Nil,
+			wantErr:     true,
+		}, {
+			name:        "Wrong Secret",
+			tokenString: validToken,
+			tokenSecret: "bomboclat",
+			wantUserID:  uuid.Nil,
+			wantErr:     true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			wannaCheckID, err := ValidateJWT(test.tokenString, test.tokenSecret)
+			if (err != nil) != test.wantErr {
+				t.Errorf("ValidateJWT() error = %v, wantErr %v", err, test.wantErr)
+			}
+			if wannaCheckID != userID {
+				t.Errorf("Parsed ID in not what was expected, ValidateJWT failed, ValidateJWT() gotUserID = %v, want %v", wannaCheckID, test.wantUserID)
+			}
+		})
+	}
+
 }
