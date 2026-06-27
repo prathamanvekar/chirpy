@@ -19,6 +19,9 @@ const (
 	TokenTypeAccess TokenType = "chirpy-access"
 )
 
+// ErrNoAuthHeaderIncluded -
+var ErrNoAuthHeaderIncluded = errors.New("no auth header included in request")
+
 // HashPassword -
 func HashPassword(password string) (string, error) {
 	hash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
@@ -85,21 +88,16 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	return id, nil
 }
 
+// GetBearerToken -
 func GetBearerToken(headers http.Header) (string, error) {
 	authHeader := headers.Get("Authorization")
 	if authHeader == "" {
-		// Fixed: Removed the dangling %v format specifier
-		return "", fmt.Errorf("missing authorization header")
+		return "", ErrNoAuthHeaderIncluded
+	}
+	splitAuth := strings.Split(authHeader, " ")
+	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
+		return "", errors.New("malformed authorization header")
 	}
 
-	// Safely check that it is actually a Bearer token
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		return "", fmt.Errorf("authorization header must start with 'Bearer '")
-	}
-
-	// Strip the prefix and any accidental extra whitespace
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	tokenString = strings.TrimSpace(tokenString)
-
-	return tokenString, nil
+	return splitAuth[1], nil
 }

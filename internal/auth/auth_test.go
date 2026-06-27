@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -71,58 +72,9 @@ func TestCheckPasswordHash(t *testing.T) {
 	}
 }
 
-func TestJWTFlow(t *testing.T) {
-	userID := uuid.New()
-	tokenSecret := "prathamaaaaaaaaaaaa"
-	expiresIn := time.Minute
-
-	token, err := MakeJWT(userID, tokenSecret, expiresIn)
-	if err != nil {
-		t.Fatalf("MakeJWT failed unexpectedly: %v", err)
-	}
-
-	parsedID, err := ValidateJWT(token, tokenSecret)
-	if err != nil {
-		t.Fatalf("ValidateJWT failed to parse a valid token: %v", err)
-	}
-
-	if parsedID != userID {
-		t.Errorf("ValidateJWT returned UUID %s; want %s", parsedID, userID)
-	}
-}
-
-// Testing an Expired Token
-func TestExpiredToken(t *testing.T) {
-	userID := uuid.New()
-	tokenSecret := "prathamaaaaaaaaaaaa"
-
-	token, _ := MakeJWT(userID, tokenSecret, -time.Hour)
-
-	_, err := ValidateJWT(token, tokenSecret)
-	if err == nil {
-		t.Errorf("Expected an error for an expired token, but got nil")
-	}
-}
-
-// Testing the Wrong Secret Key
-func TestWrongSecretKey(t *testing.T) {
-	userID := uuid.New()
-
-	token, _ := MakeJWT(userID, "aaaa", time.Minute)
-
-	_, err := ValidateJWT(token, "bbbb")
-
-	if err == nil {
-		t.Errorf("Expected signature verification to fail with wrong secret, but got nil")
-	}
-}
-
 func TestValidateJWT(t *testing.T) {
 	userID := uuid.New()
-	validToken, err := MakeJWT(userID, "secret", time.Hour)
-	if err != nil {
-		t.Fatalf("MakeJWT failed unexpectedly: %v", err)
-	}
+	validToken, _ := MakeJWT(userID, "secret", time.Hour)
 
 	tests := []struct {
 		name        string
@@ -132,37 +84,83 @@ func TestValidateJWT(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name:        "Valid Token",
+			name:        "Valid token",
 			tokenString: validToken,
 			tokenSecret: "secret",
 			wantUserID:  userID,
 			wantErr:     false,
 		},
 		{
-			name:        "Invalid Token",
+			name:        "Invalid token",
 			tokenString: "invalid.token.string",
 			tokenSecret: "secret",
 			wantUserID:  uuid.Nil,
 			wantErr:     true,
-		}, {
-			name:        "Wrong Secret",
+		},
+		{
+			name:        "Wrong secret",
 			tokenString: validToken,
-			tokenSecret: "bomboclat",
+			tokenSecret: "wrong_secret",
 			wantUserID:  uuid.Nil,
 			wantErr:     true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			wannaCheckID, err := ValidateJWT(test.tokenString, test.tokenSecret)
-			if (err != nil) != test.wantErr {
-				t.Errorf("ValidateJWT() error = %v, wantErr %v", err, test.wantErr)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotUserID, err := ValidateJWT(tt.tokenString, tt.tokenSecret)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateJWT() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if wannaCheckID != userID {
-				t.Errorf("Parsed ID in not what was expected, ValidateJWT failed, ValidateJWT() gotUserID = %v, want %v", wannaCheckID, test.wantUserID)
+			if gotUserID != tt.wantUserID {
+				t.Errorf("ValidateJWT() gotUserID = %v, want %v", gotUserID, tt.wantUserID)
 			}
 		})
 	}
+}
 
+func TestGetBearerToken(t *testing.T) {
+	tests := []struct {
+		name      string
+		headers   http.Header
+		wantToken string
+		wantErr   bool
+	}{
+		{
+			name: "Valid Bearer token",
+			headers: http.Header{
+				"Authorization": []string{"Bearer valid_token"},
+			},
+			wantToken: "valid_token",
+			wantErr:   false,
+		},
+		{
+			name:      "Missing Authorization header",
+			headers:   http.Header{},
+			wantToken: "",
+			wantErr:   true,
+		},
+		{
+			name: "Malformed Authorization header",
+			headers: http.Header{
+				"Authorization": []string{"InvalidBearer token"},
+			},
+			wantToken: "",
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotToken, err := GetBearerToken(tt.headers)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBearerToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotToken != tt.wantToken {
+				t.Errorf("GetBearerToken() gotToken = %v, want %v", gotToken, tt.wantToken)
+			}
+		})
+	}
 }

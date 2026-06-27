@@ -13,11 +13,10 @@ import (
 )
 
 type apiConfig struct {
-	// We use atomic lib here because it makes it easy to track the variable properly across go routines and shit!
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
-	serverSecret   string
+	jwtSecret      string
 }
 
 func main() {
@@ -29,6 +28,14 @@ func main() {
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -36,22 +43,11 @@ func main() {
 	}
 	dbQueries := database.New(dbConn)
 
-	platform := os.Getenv("PLATFORM")
-	if platform == "" {
-		log.Fatal("PLATFORM must be set")
-	}
-
-	secret := os.Getenv("SECRET")
-	if secret == "" {
-		log.Fatal("SECRET must be set")
-	}
-
 	apiCfg := apiConfig{
-		// initialize it like this because it is effectively a struct
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
 		platform:       platform,
-		serverSecret:   secret,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()
@@ -61,6 +57,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 
 	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
+
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
