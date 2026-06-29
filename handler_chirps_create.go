@@ -46,7 +46,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 
 	cleaned, err := validateChirp(params.Body)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error(), err)
+		respondWithError(w, http.StatusBadRequest, "failed to validate chirp", err)
 		return
 	}
 

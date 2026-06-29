@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "name": "http_handler",
+      "outer_has_param_type": "http.ResponseWriter",
+      "template": "if err != nil {\n\trespondWithError(w, http.StatusBadRequest, \"{msg}\", err)\n\treturn\n}"
+    }
+  ]
+}
