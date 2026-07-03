@@ -12,6 +12,9 @@ It provides a production-ready template demonstrating modern backend design in G
   * `/app` - A fileserver serving static frontend web assets.
   * `/api` - A REST API managing backend resources.
 
+_This project was completed as a guided curriculum on [Boot.dev](https://boot.dev)._
+
+
 ## Quick Start & Installation
 
 ### Prerequisites
