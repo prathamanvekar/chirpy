@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -38,6 +39,11 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
 	authorIDString := r.URL.Query().Get("author_id")
+	sortingOrder := r.URL.Query().Get("sort")
+
+	if sortingOrder == "" {
+		sortingOrder = "asc"
+	}
 
 	if authorIDString != "" {
 		authorID, err := uuid.Parse(authorIDString)
@@ -62,6 +68,8 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 			})
 		}
 
+		sortedChirps(chirps, sortingOrder)
+
 		respondWithJSON(w, http.StatusOK, chirps)
 		return
 
@@ -83,6 +91,19 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 			Body:      dbChirp.Body,
 		})
 	}
+	sortedChirps(chirps, sortingOrder)
 
 	respondWithJSON(w, http.StatusOK, chirps)
+}
+
+func sortedChirps(chirps []Chirp, order string) {
+	if order == "asc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)
+		})
+	} else if order == "desc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
+	}
 }

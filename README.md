@@ -1,13 +1,48 @@
 # Chirpy
 
-Chirpy is a minimal, Twitter-like API service built with Go and PostgreSQL.
+Chirpy is a minimal, Twitter-like social media API service built in Go and powered by PostgreSQL.
 
-## Architecture
-The application is separated into two components:
-* `/app` - A fileserver serving frontend web assets.
-* `/api` - A REST API managing backend resources.
+It provides a production-ready template demonstrating modern backend design in Go, featuring secure stateless authentication, database migrations, custom sorting, type-safe SQL query generation, and external webhook integrations.
+
+## Why Chirpy?
+* **Dual-Token Authentication Flow**: Implements short-lived JWT Access Tokens combined with long-lived database-backed Refresh Tokens for robust security and session revocation.
+* **Go + PostgreSQL Core**: Utilizes standard Go libraries (`net/http`, `database/sql`) for speed, predictability, and minimal dependency overhead.
+* **Automated Tooling**: Powered by [Goose](https://github.com/pressly/goose) for database migrations and [sqlc](https://sqlc.dev/) for type-safe SQL queries.
+* **Architecture Separation**: Virtually decoupled into:
+  * `/app` - A fileserver serving static frontend web assets.
+  * `/api` - A REST API managing backend resources.
+
+## Quick Start & Installation
+
+### Prerequisites
+Make sure you have the following installed:
+* [Go](https://go.dev/) (1.22+)
+* [PostgreSQL](https://www.postgresql.org/)
+* [Goose](https://github.com/pressly/goose) (for migrations)
+
+### 1. Clone & Setup Configuration
+Clone the repository and create your configuration file:
+```bash
+cp .env.example .env
+```
+Ensure the variables (`DB_URL`, `JWT_SECRET`, `POLKA_KEY`) are set according to your database configurations.
+
+### 2. Run Database Migrations
+Apply the PostgreSQL schemas to your local database:
+```bash
+cd sql/schema
+goose postgres "your-database-connection-string" up
+```
+
+### 3. Start the Server
+Run the application from the root directory:
+```bash
+go run .
+```
+The server will start listening at `http://localhost:8080`.
 
 ---
+
 
 ## Authentication Flow
 Chirpy implements standard JWT-based authentication using short-lived Access Tokens and long-lived Refresh Tokens.
@@ -70,7 +105,9 @@ Submit and retrieve short posts.
 
 ### Get All Chirps
 * **Method & Path**: `GET /api/chirps`
-* **Optional Query Param**: `author_id` (UUID string) to filter by a specific author.
+* **Optional Query Params**: 
+  * `author_id` (UUID string) - Filter chirps by a specific author.
+  * `sort` (string) - Sort direction, either `asc` (default) or `desc`.
 
 ### Get Single Chirp
 * **Method & Path**: `GET /api/chirps/{chirpID}`
