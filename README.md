@@ -4,13 +4,26 @@ Chirpy is a minimal, Twitter-like social media API service built in Go and power
 
 It provides a production-ready template demonstrating modern backend design in Go, featuring secure stateless authentication, database migrations, custom sorting, type-safe SQL query generation, and external webhook integrations.
 
+### 🛠️ Tech Stack
+* **Language**: Go (1.22+)
+* **Database**: PostgreSQL
+* **Tools**: [Goose](https://github.com/pressly/goose) (migrations), [sqlc](https://sqlc.dev/) (type-safe SQL compiler)
+* **Libraries**: Standard Go `net/http` and `database/sql` (minimal external dependencies)
+
+
+
 ## Why Chirpy?
 * **Dual-Token Authentication Flow**: Implements short-lived JWT Access Tokens combined with long-lived database-backed Refresh Tokens for robust security and session revocation.
-* **Go + PostgreSQL Core**: Utilizes standard Go libraries (`net/http`, `database/sql`) for speed, predictability, and minimal dependency overhead.
-* **Automated Tooling**: Powered by [Goose](https://github.com/pressly/goose) for database migrations and [sqlc](https://sqlc.dev/) for type-safe SQL queries.
-* **Architecture Separation**: Virtually decoupled into:
+* **Go + PostgreSQL Core**: Utilizes standard Go libraries for speed, predictability, and minimal dependency overhead.
+* **Automated Tooling**: Clean codebase generation using Goose and sqlc.
+* **Architecture Separation**: Separated into two distinct handler groups:
   * `/app` - A fileserver serving static frontend web assets.
   * `/api` - A REST API managing backend resources.
+
+
+### What Chirpy is Not
+* **No Frontend UI**: This is a pure JSON REST API. While a static file server is included, it only serves example client-side code for testing.
+* **Not for Production Deployments**: Intended as a local learning project and portfolio demonstration.
 
 _This project was completed as a guided curriculum on [Boot.dev](https://boot.dev)._
 
@@ -50,11 +63,11 @@ The server will start listening at `http://localhost:8080`.
 ## Authentication Flow
 Chirpy implements standard JWT-based authentication using short-lived Access Tokens and long-lived Refresh Tokens.
 
-| Endpoint | Method | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `POST /api/login` | `POST` | Authenticate credentials and retrieve tokens. | None |
-| `POST /api/refresh` | `POST` | Exchange a valid Bearer Refresh Token for a new Access Token. | Bearer Refresh Token |
-| `POST /api/revoke` | `POST` | Revoke a Bearer Refresh Token, preventing future refreshes. | Bearer Refresh Token |
+| Endpoint | Description | Auth Required |
+| :--- | :--- | :--- |
+| `POST /api/login` | Authenticate credentials and retrieve tokens. | None |
+| `POST /api/refresh` | Exchange a valid Bearer Refresh Token for a new Access Token. | Bearer Refresh Token |
+| `POST /api/revoke` | Revoke a Bearer Refresh Token, preventing future refreshes. | Bearer Refresh Token |
 
 ### Auth Request Payload Sample
 ```json
