@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// handlerMetrics renders a simple HTML page displaying the total count of file server requests/visits.
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
@@ -20,6 +21,7 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	`, cfg.fileserverHits.Load())))
 }
 
+// middlewareMetricsInc is an HTTP middleware that increments the visit counter for every requested resource.
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.fileserverHits.Add(1)

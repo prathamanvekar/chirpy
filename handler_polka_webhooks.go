@@ -18,6 +18,7 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 		} `json:"data"`
 	}
 
+	// Validate the Polka API Key sent via Authorization header
 	apiKey, err := auth.GetAPIKey(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't find api key", err)
@@ -27,20 +28,23 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 		respondWithError(w, http.StatusUnauthorized, "API key is invalid", err)
 		return
 	}
+
+	// Decode webhook event request body
 	decoder := json.NewDecoder(r.Body)
 	var params parameters
-
 	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "failed to decode", err)
 		return
 	}
 
+	// Only process 'user.upgraded' events. Respond with 204 for all other event types.
 	if params.Event != "user.upgraded" {
 		w.WriteHeader(204)
 		return
 	}
 
+	// Upgrade the user in the database. Returns sql.ErrNoRows (404) if user doesn't exist.
 	_, err = cfg.db.UpgradeUser(r.Context(), params.Data.UserID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -52,5 +56,4 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(204)
-
 }

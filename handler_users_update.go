@@ -28,11 +28,12 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Decode parameters for user updates
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err = decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
+		respondWithError(w, http.StatusBadRequest, "Couldn't decode parameters", err)
 		return
 	}
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -28,7 +29,7 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	isRevoked := refreshTokenRecord.RevokedAt.Valid
 
 	if isExpired || isRevoked {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized user", err)
+		respondWithError(w, http.StatusUnauthorized, "Refresh token is expired or revoked", errors.New("token expired or revoked"))
 		return
 	}
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -14,9 +16,14 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch chirp by ID, return 404 if not found, 500 for database issues
 	dbChirp, err := cfg.db.GetChirp(r.Context(), chirpID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Couldn't get chirp", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "Couldn't get chirp", err)
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve chirp", err)
 		return
 	}
 

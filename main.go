@@ -12,6 +12,7 @@ import (
 	"github.com/prathamanvekar/learn-http-servers/internal/database"
 )
 
+// apiConfig holds server configuration state, environment flags, and the database client connection wrapper.
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
@@ -24,6 +25,7 @@ func main() {
 	const filepathRoot = "."
 	const port = "8080"
 
+	// Load configuration from local .env environment variables
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
@@ -42,6 +44,7 @@ func main() {
 		log.Fatal("POLKA_KEY environment variable is not set")
 	}
 
+	// Connect to the PostgreSQL database
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
@@ -57,6 +60,8 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	
+	// Setup metrics tracking for the web application client assets
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
 	mux.Handle("/app/", fsHandler)
 

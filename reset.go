@@ -2,6 +2,7 @@ package main
 
 import "net/http"
 
+// handlerReset clears database records and resets hit counters. Access is restricted to the development environment.
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
 		w.WriteHeader(http.StatusForbidden)
@@ -9,6 +10,7 @@ func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Reset fileserver metrics and wipe user tables in db
 	cfg.fileserverHits.Store(0)
 	err := cfg.db.DeleteUsers(r.Context())
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+// respondWithError formats an error message and logs severe errors, returning a JSON response.
 func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 	if err != nil {
 		log.Println(err)
@@ -23,7 +24,7 @@ func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 	})
 }
 
-// the interface type can take any interface of any struct type as a payload, free for all type
+// respondWithJSON marshals any generic interface payload into JSON and writes it to the response writer.
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	dat, err := json.Marshal(payload)

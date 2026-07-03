@@ -23,7 +23,7 @@ func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Not authorized to revoke refresh token", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to revoke refresh token", err)
 		return
 	}
 
