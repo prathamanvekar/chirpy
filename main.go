@@ -60,7 +60,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	
+
 	// Setup metrics tracking for the web application client assets
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
 	mux.Handle("/app/", fsHandler)
